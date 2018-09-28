@@ -13,7 +13,7 @@ N_CLASSES = 151
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
-        self.fc1 = nn.Linear(900, 2)
+        self.fc1 = nn.Linear(900, 3)
 
     def forward(self, x):
         x = F.avg_pool2d(x, 8)
