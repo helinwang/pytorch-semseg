@@ -41,7 +41,7 @@ def decode_segmap(temp, plot=False):
         return rgb
 
 def infer(args):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = "cpu"
 
     # Setup image
     print("Read Input Image from : {}".format(args.img_path))
@@ -61,7 +61,7 @@ def infer(args):
 
     # Setup model
     model = get_model({"arch":"fcn8s"}, N_CLASSES, version="mit_sceneparsing_benchmark")
-    state = convert_state_dict(torch.load(args.model_path)["model_state"])
+    state = convert_state_dict(torch.load(args.model_path, map_location='cpu')["model_state"])
     model.load_state_dict(state)
     model.eval()
     model.to(device)
@@ -77,7 +77,7 @@ def infer(args):
     pred_raw = outputs.data.max(1)[1]
     pred = np.squeeze(pred_raw.cpu().numpy(), axis=0)
 
-    turn_logit = classifier(pred_raw.type(torch.cuda.FloatTensor) / N_CLASSES)
+    turn_logit = classifier(pred_raw.type(torch.FloatTensor) / N_CLASSES)
     print(turn_logit.detach().cpu().numpy())
 
     decoded = decode_segmap(pred)
