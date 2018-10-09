@@ -105,7 +105,7 @@ def train(args):
     classifier = Classifier()
     classifier.eval()
     classifier.to(device)
-    optimizer = optim.SGD(classifier.parameters(), lr=0.0001, momentum=True)
+    optimizer = optim.SGD(classifier.parameters(), lr=0.001, momentum=True)
 
     if args.train_csv_path is not None:
         print("Read training csv file from : {}".format(args.train_csv_path))
