@@ -57,10 +57,17 @@ def train_step(feature_net, classifier, optimizer, img, label):
     # print(label)
     # print(turn_logit.detach().cpu().numpy())
 
+def eval(feature_net, classifier, img, label):
+    outputs = feature_net(img)
+    pred_raw = outputs.data.max(1)[1]
+    feature = pred_raw.type(torch.FloatTensor) / N_CLASSES
+    turn_logit = classifier(feature)
+    print("accuracy", (turn_logit.max(1)[1] == torch.tensor(label)).sum().double() / len(label))
+
 def read_samples(csv_path, batch_size):
     images = []
     labels = []
-    with open(args.train_csv_path) as csv_file:
+    with open(csv_path) as csv_file:
         reader = csv.DictReader(csv_file)
         for row in reader:
             img = misc.imread(row['image'])
@@ -100,11 +107,17 @@ def train(args):
     classifier.to(device)
     optimizer = optim.SGD(classifier.parameters(), lr=0.0001, momentum=True)
 
-    print("Read Input csv file from : {}".format(args.train_csv_path))
-    train_data = read_samples(args.train_csv_path, args.batch_size)
-    for i in range(20):
-        for img, label in train_data:
-            train_step(model, classifier, optimizer, img, label)
+    if args.train_csv_path is not None:
+        print("Read training csv file from : {}".format(args.train_csv_path))
+        train_data = read_samples(args.train_csv_path, args.batch_size)
+        for i in range(args.num_epoch):
+            for img, label in train_data:
+                train_step(model, classifier, optimizer, img, label)
+
+    if args.test_csv_path is not None:
+        print("Read testing csv file from : {}".format(args.test_csv_path))
+        test_data = read_samples(args.test_csv_path, 999)
+        eval(model, classifier, test_data[0][0], test_data[0][1])
 
 
 if __name__ == "__main__":
@@ -126,6 +139,10 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--batch_size", nargs="?", type=int, default=1, help="training batch size"
+    )
+
+    parser.add_argument(
+        "--num_epoch", nargs="?", type=int, default=1, help="number of epochs to train"
     )
 
     args = parser.parse_args()
