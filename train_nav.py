@@ -46,16 +46,43 @@ def train_step(feature_net, classifier, optimizer, img, label):
     optimizer.zero_grad()
     outputs = feature_net(img)
     pred_raw = outputs.data.max(1)[1]
-    pred = np.squeeze(pred_raw.cpu().numpy(), axis=0)
     feature = pred_raw.type(torch.FloatTensor) / N_CLASSES
 
     turn_logit = classifier(feature)
-    l = [label]
-    l = torch.tensor(l).type(torch.LongTensor)
+    l = torch.tensor(label).type(torch.LongTensor)
     loss = F.nll_loss(turn_logit, l)
     loss.backward()
     optimizer.step()
-    print(loss.detach().numpy(), label, turn_logit.detach().cpu().numpy())
+    print(loss.detach().numpy())
+    # print(label)
+    # print(turn_logit.detach().cpu().numpy())
+
+def read_samples(csv_path, batch_size):
+    images = []
+    labels = []
+    with open(args.train_csv_path) as csv_file:
+        reader = csv.DictReader(csv_file)
+        for row in reader:
+            img = misc.imread(row['image'])
+            img = misc.imresize(img, (240, 240))
+            img = img[:, :, ::-1]
+            img = img.astype(np.float64)
+            img -= np.array([104.00699, 116.66877, 122.67892])
+            img = img.astype(float) / 255.0
+
+            # NHWC -> NCHW
+            img = img.transpose(2, 0, 1)
+            # img = np.expand_dims(img, 0)
+            img = torch.from_numpy(img).float()
+            images.append(img)
+            labels.append(int(row['label']))
+
+    permutation = torch.randperm(len(images))
+    batches = []
+    for i in range(0, len(images), batch_size):
+        batches.append((torch.stack(images[i:i+batch_size]), labels[i:i+batch_size]))
+    return batches
+
 
 def train(args):
     device = "cpu"
@@ -73,37 +100,33 @@ def train(args):
     classifier.to(device)
     optimizer = optim.SGD(classifier.parameters(), lr=0.0001, momentum=True)
 
-    print("Read Input csv file from : {}".format(args.csv_path))
-    with open(args.csv_path) as csv_file:
-        reader = csv.DictReader(csv_file)
-        for row in reader:
-            img = misc.imread(row['image'])
-            img = misc.imresize(img, (240, 240))
-            img = img[:, :, ::-1]
-            img = img.astype(np.float64)
-            img -= np.array([104.00699, 116.66877, 122.67892])
-            img = img.astype(float) / 255.0
-
-            # NHWC -> NCHW
-            img = img.transpose(2, 0, 1)
-            img = np.expand_dims(img, 0)
-            img = torch.from_numpy(img).float()
-            for i in range(20):
-                train_step(model, classifier, optimizer, img, int(row['label']))
+    print("Read Input csv file from : {}".format(args.train_csv_path))
+    train_data = read_samples(args.train_csv_path, args.batch_size)
+    for i in range(20):
+        for img, label in train_data:
+            train_step(model, classifier, optimizer, img, label)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Params")
-    parser.add_argument(
-        "--model_path",
-        nargs="?",
-        type=str,
-        default="fcn8s_pascal_1_26.pkl",
-        help="Path to the saved model",
+    parser.add_argument("--model_path", nargs="?", type=str, help="Path to the saved model"
     )
 
     parser.add_argument(
-        "--csv_path", nargs="?", type=str, default=None, help="Path of the input csv file"
+        "--output_model_path", nargs="?", type=str, default=None, help="Path to save the trained model"
     )
+
+    parser.add_argument(
+        "--train_csv_path", nargs="?", type=str, default=None, help="Path of the training csv file"
+    )
+
+    parser.add_argument(
+        "--test_csv_path", nargs="?", type=str, default=None, help="Path of the testing csv file"
+    )
+
+    parser.add_argument(
+        "--batch_size", nargs="?", type=int, default=1, help="training batch size"
+    )
+
     args = parser.parse_args()
     train(args)
