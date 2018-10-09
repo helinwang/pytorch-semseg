@@ -96,14 +96,16 @@ def train(args):
 
     # Setup model
     model = get_model({"arch":"fcn8s"}, N_CLASSES, version="mit_sceneparsing_benchmark")
-    state = convert_state_dict(torch.load(args.model_path, map_location='cpu')["model_state"])
+    state = convert_state_dict(torch.load(args.feature_model_path, map_location='cpu')["model_state"])
     model.load_state_dict(state)
     model.eval()
     model.to(device)
 
     # Setup classifier
     classifier = Classifier()
-    classifier.eval()
+    if args.classifier_model_path is not None:
+        classifier.load_state_dict(torch.load(args.classifier_model_path, map_location='cpu'))
+
     classifier.to(device)
     optimizer = optim.SGD(classifier.parameters(), lr=0.001, momentum=True)
 
@@ -113,8 +115,10 @@ def train(args):
         for i in range(args.num_epoch):
             for img, label in train_data:
                 train_step(model, classifier, optimizer, img, label)
+        torch.save(classifier.state_dict(), args.output_model_path)
 
     if args.test_csv_path is not None:
+        classifier.eval()
         print("Read testing csv file from : {}".format(args.test_csv_path))
         test_data = read_samples(args.test_csv_path, 999)
         eval(model, classifier, test_data[0][0], test_data[0][1])
@@ -122,7 +126,10 @@ def train(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Params")
-    parser.add_argument("--model_path", nargs="?", type=str, help="Path to the saved model"
+    parser.add_argument("--feature_model_path", nargs="?", type=str, help="Path to the saved feature model"
+    )
+
+    parser.add_argument("--classifier_model_path", nargs="?", type=str, help="Path to the saved classifier model"
     )
 
     parser.add_argument(
