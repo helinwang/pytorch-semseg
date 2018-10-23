@@ -46,6 +46,23 @@ The classifier makes prediction based on the output of the feature
 extraction model. The weights of the feature extraction model is
 freezed during the classifier model training.
 
+#### Preprocess Data
+
+The original collected data csv file (data.csv) contains more columns
+of data than we needed. The current model only need image and
+direction label (0, 1, 2). We need to preprocess:
+
+1. Extract the image and direction rows
+1. Quantize direction (0.0 - 180.0) to 0, 1, 2 (left, straight, right)
+
+It can be done using the following bash command:
+
+```
+cat data.csv|awk -F, '$29 > 93 {print $2",2"} $29 < 87 {print $2",1"} $29 >=87 && $29 <= 93 {print $2",0"}' | awk 'NR==1{print "image,label"} NR>1{print $1}' > train.csv
+```
+
+#### Training
+
 Use the command below to train the classifier model:
 
 ```
