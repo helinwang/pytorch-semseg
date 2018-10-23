@@ -6,7 +6,7 @@ data:
     val_split: validation
     img_rows: 'same'
     img_cols: 'same'
-    path: ~/dataset/ADEChallengeData2016/
+    path: /home/username/dataset/ADEChallengeData2016/
 training:
     train_iters: 300000
     batch_size: 1
