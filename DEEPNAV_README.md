@@ -1,7 +1,9 @@
 ### Train Feature Extraction Model
 
-The feature extraction model is a pixel-wise segmentation model of the
-FCN-8s standard architecture, trained
+The feature extraction model is a pixel-wise segmentation model of
+the
+[FCN-8s standard architecture](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf),
+trained
 on [mit sceneparsing benchmark](http://sceneparsing.csail.mit.edu/)
 dataset.
 
@@ -10,12 +12,16 @@ https://github.com/meetshah1995/pytorch-semseg , which contains the
 implementation of FCN-8s model.
 
 1. Download
-   ["Secene Parsing" dataset](http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip) from
-   http://sceneparsing.csail.mit.edu/ and extract to hard disk.
+   the
+   [mit sceneparsing benchmark dataset](http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip) and
+   extract to hard disk.
 
-1. Edit "path" in `configs/fcn8s_deepnav.yml` to refect the path to the training dataset.
+1. Edit "path" in `configs/fcn8s_deepnav.yml` to reflect the path to
+   the training dataset.
 
-1. Install Python package dependencies (please use Python 3, recommend to use [Miniconda](https://conda.io/miniconda.html) as the virtual Python environment).
+1. Install Python package dependencies (please use Python 3.5,
+   recommend to use [Miniconda](https://conda.io/miniconda.html) as
+   the virtual Python environment).
    ```
    # steps to setup the conda Python virtial environment, can be skipped
    $ conda create --name deepnav python=3.5
@@ -24,7 +30,7 @@ implementation of FCN-8s model.
    $ pip install -r requirements.txt
    ```
    
-1. Start training
+1. Start training.
    ```
    $ python train.py --config configs/fcn8s_deepnav.yml
    ```
@@ -33,7 +39,7 @@ You will find running logs and model checkpoint in
 `runs/fcn8s_deepnav/$PID`. The model checkpoint will be used in the
 latter steps.
 
-### Infer Feature Extraction Model
+### Feature Extraction Model Inference
 
 ```
 # save the segmented images to "out_path"
@@ -48,17 +54,17 @@ freezed during the classifier model training.
 
 #### Preprocess Data
 
-The original collected data csv file (data.csv) contains more columns
-of data than we needed. The current model only need image and
-direction label (0, 1, 2). We need to preprocess:
+The original collected `data.csv` contains more columns of data than
+we needed. The current model only need image and direction label (0,
+1, 2). We need to:
 
-1. Extract the image and direction rows
-1. Quantize direction (0.0 - 180.0) to 0, 1, 2 (left, straight, right)
+1. Extract the image and direction rows.
+1. Quantize direction of 0.0 - 180.0 into 0, 1, 2 (left, straight, right).
 
 It can be done using the following bash command:
 
 ```
-cat data.csv|awk -F, '$29 > 93 {print $2",2"} $29 < 87 {print $2",1"} $29 >=87 && $29 <= 93 {print $2",0"}' | awk 'NR==1{print "image,label"} NR>1{print $1}' > train.csv
+$ cat data.csv|awk -F, '$29 > 93 {print $2",2"} $29 < 87 {print $2",1"} $29 >=87 && $29 <= 93 {print $2",0"}' | awk 'NR==1{print "image,label"} NR>1{print $1}' > train.csv
 ```
 
 #### Training
@@ -119,7 +125,7 @@ $ python train_nav_gpu.py --feature_model_path fcn8s_mit_sceneparsing_benchmark_
 #  1539288510.418192.jpg,2
 #  1539288697.430087.jpg,2
 
-python train_nav.py --feature_model_path fcn8s_mit_sceneparsing_benchmark_best_model.pkl --classifier_model_path classifier.pkl --test_csv_path test_less.csv
+$ python train_nav.py --feature_model_path fcn8s_mit_sceneparsing_benchmark_best_model.pkl --classifier_model_path classifier.pkl --test_csv_path test_less.csv
 ```
 
 Outputs accuracy (26.67% in this case):
